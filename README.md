@@ -19,7 +19,8 @@ A voice-controlled tennis score tracking web app for players and coaches. Keep t
   - Points: 0, 15, 30, 40, Deuce, Advantage
   - Games: First to 4 points with 2-point margin
   - Sets: First to 6 games with 2-game margin
-  - Best of 3 sets match tracking
+  - **Configurable match length**: 1, 3, or 5 sets
+  - **Tie-break support**: Automatic tie-break at 6-6 (first to 7 points with 2-point margin)
 
 - **High Visibility Design**
   - High-contrast colors optimized for outdoor use
@@ -98,13 +99,12 @@ Or use it online by hosting on any web server or GitHub Pages.
 
 ### Future Enhancements
 
-- [ ] Tiebreak support (at 6-6 in sets)
 - [ ] Match history and statistics
-- [ ] Player names customization
 - [ ] Match timer
 - [ ] Export match results
 - [ ] Progressive Web App (PWA) support
 - [ ] Multiple language support expansion
+- [ ] Championship tie-break (at 6-6 in final set)
 
 ### Contributing
 
@@ -132,7 +132,8 @@ MIT License - See [LICENSE](LICENSE) file for details.
   - Puntos: 0, 15, 30, 40, Deuce, Ventaja
   - Juegos: Primero en ganar 4 puntos con margen de 2 puntos
   - Sets: Primero en ganar 6 juegos con margen de 2 juegos
-  - Seguimiento de partidos al mejor de 3 sets
+  - **Duración de partido configurable**: 1, 3 o 5 sets
+  - **Soporte de tie-break**: Tie-break automático a 6-6 (primero en 7 puntos con margen de 2 puntos)
 
 - **Diseño de Alta Visibilidad**
   - Colores de alto contraste optimizados para uso al aire libre
@@ -211,13 +212,12 @@ O úsalo en línea alojándolo en cualquier servidor web o GitHub Pages.
 
 ### Mejoras Futuras
 
-- [ ] Soporte para tie-break (en 6-6 en sets)
 - [ ] Historial de partidos y estadísticas
-- [ ] Personalización de nombres de jugadores
 - [ ] Temporizador de partido
 - [ ] Exportar resultados de partidos
 - [ ] Soporte para Progressive Web App (PWA)
 - [ ] Expansión de soporte multiidioma
+- [ ] Tie-break de campeonato (a 6-6 en el set final)
 
 ### Contribuciones
 

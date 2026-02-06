@@ -17,6 +17,15 @@
                 <input type="text" id="player2-name-input" placeholder="Jugador 2" autocomplete="off" maxlength="20">
 
                 <div class="serve-selection">
+                    <label>Number of sets</label>
+                    <div class="serve-buttons sets-buttons">
+                        <button type="button" class="btn btn-serve btn-sets" data-sets="1">1 Set</button>
+                        <button type="button" class="btn btn-serve btn-sets selected" data-sets="3">3 Sets</button>
+                        <button type="button" class="btn btn-serve btn-sets" data-sets="5">5 Sets</button>
+                    </div>
+                </div>
+
+                <div class="serve-selection">
                     <label>Who serves first?</label>
                     <div class="serve-buttons">
                         <button type="button" class="btn btn-serve" id="player1-serves" data-server="player1">
@@ -53,10 +62,12 @@
                         <span class="player-name" id="player1-name-display">Player 1</span>
                         <span class="serve-indicator" id="player1-serve">●</span>
                     </div>
-                    <div class="sets-container">
+                    <div class="sets-container" id="p1-sets-container">
                         <div class="set-score" id="p1-set1">-</div>
                         <div class="set-score" id="p1-set2">-</div>
                         <div class="set-score" id="p1-set3">-</div>
+                        <div class="set-score" id="p1-set4">-</div>
+                        <div class="set-score" id="p1-set5">-</div>
                     </div>
                 </div>
                 <div class="set-history-row">
@@ -64,10 +75,12 @@
                         <span class="player-name" id="player2-name-display">Player 2</span>
                         <span class="serve-indicator" id="player2-serve">●</span>
                     </div>
-                    <div class="sets-container">
+                    <div class="sets-container" id="p2-sets-container">
                         <div class="set-score" id="p2-set1">-</div>
                         <div class="set-score" id="p2-set2">-</div>
                         <div class="set-score" id="p2-set3">-</div>
+                        <div class="set-score" id="p2-set4">-</div>
+                        <div class="set-score" id="p2-set5">-</div>
                     </div>
                 </div>
             </div>

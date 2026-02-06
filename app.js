@@ -12,20 +12,22 @@ class TennisMatch {
             player2: savedNames.player2 || 'Jugador 2'
         };
 
+        // Match configuration
+        this.totalSets = 3; // Default to best of 3
+
         // Match state
         this.score = {
             player1: { points: 0, games: 0, sets: 0 },
             player2: { points: 0, games: 0, sets: 0 }
         };
-        this.setHistory = [
-            { player1: 0, player2: 0 }, // Set 1
-            { player1: 0, player2: 0 }, // Set 2
-            { player1: 0, player2: 0 }  // Set 3
-        ];
+        this.setHistory = this.createSetHistory(3);
         this.currentSet = 0; // 0-indexed
         this.server = 'player1'; // Track who is serving
         this.history = [];
         this.matchWinner = null;
+        this.tiebreak = false;
+        this.tiebreakPoints = { player1: 0, player2: 0 };
+        this.tiebreakStartServer = null;
 
         // Tennis scoring points map
         this.pointsDisplay = {
@@ -107,6 +109,14 @@ class TennisMatch {
         this.initEventListeners();
         this.applyTheme(this.currentTheme);
         this.showNamesModal();
+    }
+
+    createSetHistory(numSets) {
+        const history = [];
+        for (let i = 0; i < numSets; i++) {
+            history.push({ player1: 0, player2: 0 });
+        }
+        return history;
     }
 
     loadTheme() {
@@ -223,6 +233,11 @@ class TennisMatch {
             if (e.key === 'Enter') this.startMatch();
         });
 
+        // Set selection
+        document.querySelectorAll('.btn-sets').forEach(btn => {
+            btn.addEventListener('click', () => this.selectSets(parseInt(btn.dataset.sets)));
+        });
+
         // Serve selection
         this.elements.player1ServesBtn.addEventListener('click', () => this.selectServer('player1'));
         this.elements.player2ServesBtn.addEventListener('click', () => this.selectServer('player2'));
@@ -287,6 +302,16 @@ class TennisMatch {
         this.elements.player1NameInput.focus();
     }
 
+    selectSets(numSets) {
+        this.totalSets = numSets;
+
+        // Update button states
+        document.querySelectorAll('.btn-sets').forEach(btn => {
+            const sets = parseInt(btn.dataset.sets);
+            btn.classList.toggle('selected', sets === numSets);
+        });
+    }
+
     selectServer(player) {
         this.selectedServer = player;
 
@@ -318,6 +343,12 @@ class TennisMatch {
         // Set the server based on selection
         this.server = this.selectedServer;
 
+        // Initialize set history based on selected number of sets
+        this.setHistory = this.createSetHistory(this.totalSets);
+
+        // Update set display columns
+        this.updateSetColumns();
+
         // Update displays
         this.updatePlayerNames();
 
@@ -325,6 +356,30 @@ class TennisMatch {
         this.elements.namesModal.classList.add('hidden');
 
         this.updateDisplay();
+    }
+
+    updateSetColumns() {
+        // Show/hide set columns based on totalSets
+        for (let i = 1; i <= 5; i++) {
+            const p1Set = document.getElementById(`p1-set${i}`);
+            const p2Set = document.getElementById(`p2-set${i}`);
+
+            if (p1Set && p2Set) {
+                if (i <= this.totalSets) {
+                    p1Set.style.display = 'block';
+                    p2Set.style.display = 'block';
+                } else {
+                    p1Set.style.display = 'none';
+                    p2Set.style.display = 'none';
+                }
+            }
+        }
+
+        // Update grid columns
+        const containers = document.querySelectorAll('.sets-container');
+        containers.forEach(container => {
+            container.style.gridTemplateColumns = `repeat(${this.totalSets}, 1fr)`;
+        });
     }
 
     updatePlayerNames() {
@@ -571,36 +626,87 @@ class TennisMatch {
         this.saveState();
 
         const opponent = player === 'player1' ? 'player2' : 'player1';
-        this.score[player].points++;
 
-        // Check for game win
-        if (this.checkGameWin(player, opponent)) {
-            this.score[player].games++;
-            this.setHistory[this.currentSet][player] = this.score[player].games;
+        // Tie-break mode
+        if (this.tiebreak) {
+            this.tiebreakPoints[player]++;
 
-            // Reset points
-            this.score.player1.points = 0;
-            this.score.player2.points = 0;
-
-            // Alternate server after game
-            this.server = this.server === 'player1' ? 'player2' : 'player1';
-
-            // Check for set win
-            if (this.checkSetWin(player, opponent)) {
+            // Check for tie-break win
+            if (this.checkTiebreakWin(player, opponent)) {
+                // Player wins the tie-break and the set
+                this.score[player].games++;
+                this.setHistory[this.currentSet][player] = this.score[player].games;
                 this.score[player].sets++;
+
+                // Reset for next set
                 this.score.player1.games = 0;
                 this.score.player2.games = 0;
+                this.score.player1.points = 0;
+                this.score.player2.points = 0;
+                this.tiebreak = false;
+                this.tiebreakPoints = { player1: 0, player2: 0 };
 
-                // Check for match win (best of 3 sets)
-                if (this.score[player].sets === 2) {
+                // Alternate server after tie-break
+                this.server = this.server === 'player1' ? 'player2' : 'player1';
+
+                // Check for match win
+                const setsToWin = Math.ceil(this.totalSets / 2);
+                if (this.score[player].sets === setsToWin) {
                     this.matchWinner = player;
                     this.showMatchStatus(`🏆 ${this.playerNames[player].toUpperCase()} WINS! 🏆`);
                 } else {
                     this.currentSet++;
-                    this.showMatchStatus(`${this.playerNames[player]} wins Set ${this.currentSet}`);
+                    this.showMatchStatus(`${this.playerNames[player]} wins Set ${this.currentSet} (Tie-break)`);
                 }
             } else {
-                this.showMatchStatus(`${this.playerNames[player]} wins game`);
+                // In tie-break, server alternates every 2 points
+                const totalPoints = this.tiebreakPoints.player1 + this.tiebreakPoints.player2;
+                if (totalPoints % 2 === 1) {
+                    this.server = this.server === 'player1' ? 'player2' : 'player1';
+                }
+            }
+        } else {
+            // Regular game
+            this.score[player].points++;
+
+            // Check for game win
+            if (this.checkGameWin(player, opponent)) {
+                this.score[player].games++;
+                this.setHistory[this.currentSet][player] = this.score[player].games;
+
+                // Reset points
+                this.score.player1.points = 0;
+                this.score.player2.points = 0;
+
+                // Check if we should enter tie-break (6-6)
+                if (this.score.player1.games === 6 && this.score.player2.games === 6) {
+                    this.tiebreak = true;
+                    this.tiebreakStartServer = this.server;
+                    this.showMatchStatus('Tie-break!');
+                }
+                // Check for set win
+                else if (this.checkSetWin(player, opponent)) {
+                    this.score[player].sets++;
+                    this.score.player1.games = 0;
+                    this.score.player2.games = 0;
+
+                    // Check for match win
+                    const setsToWin = Math.ceil(this.totalSets / 2);
+                    if (this.score[player].sets === setsToWin) {
+                        this.matchWinner = player;
+                        this.showMatchStatus(`🏆 ${this.playerNames[player].toUpperCase()} WINS! 🏆`);
+                    } else {
+                        this.currentSet++;
+                        this.showMatchStatus(`${this.playerNames[player]} wins Set ${this.currentSet}`);
+                    }
+                } else {
+                    this.showMatchStatus(`${this.playerNames[player]} wins game`);
+                }
+
+                // Alternate server after game (unless entering tie-break)
+                if (!this.tiebreak) {
+                    this.server = this.server === 'player1' ? 'player2' : 'player1';
+                }
             }
         }
 
@@ -623,8 +729,7 @@ class TennisMatch {
         const playerGames = this.score[player].games;
         const opponentGames = this.score[opponent].games;
 
-        // Win set: first to 6 games with 2 game lead
-        // TODO: Add tiebreak at 6-6 in future version
+        // Win set: first to 6 games with 2 game lead (or 7-5)
         if (playerGames >= 6 && playerGames - opponentGames >= 2) {
             return true;
         }
@@ -632,7 +737,24 @@ class TennisMatch {
         return false;
     }
 
+    checkTiebreakWin(player, opponent) {
+        const playerPoints = this.tiebreakPoints[player];
+        const opponentPoints = this.tiebreakPoints[opponent];
+
+        // Win tie-break: first to 7 points with 2 point lead
+        if (playerPoints >= 7 && playerPoints - opponentPoints >= 2) {
+            return true;
+        }
+
+        return false;
+    }
+
     getPointDisplay(player) {
+        // In tie-break, show actual points
+        if (this.tiebreak) {
+            return this.tiebreakPoints[player].toString();
+        }
+
         const playerPoints = this.score[player].points;
         const opponent = player === 'player1' ? 'player2' : 'player1';
         const opponentPoints = this.score[opponent].points;
@@ -669,10 +791,12 @@ class TennisMatch {
     }
 
     updateSetHistory() {
-        // Update all sets
-        for (let i = 0; i < 3; i++) {
-            const p1Element = this.elements[`p${1}Set${i + 1}`];
-            const p2Element = this.elements[`p${2}Set${i + 1}`];
+        // Update all sets (up to 5)
+        for (let i = 0; i < this.totalSets; i++) {
+            const p1Element = document.getElementById(`p1-set${i + 1}`);
+            const p2Element = document.getElementById(`p2-set${i + 1}`);
+
+            if (!p1Element || !p2Element) continue;
 
             const p1Games = this.setHistory[i].player1;
             const p2Games = this.setHistory[i].player2;
@@ -747,7 +871,11 @@ class TennisMatch {
             setHistory: JSON.parse(JSON.stringify(this.setHistory)),
             currentSet: this.currentSet,
             server: this.server,
-            matchWinner: this.matchWinner
+            matchWinner: this.matchWinner,
+            tiebreak: this.tiebreak,
+            tiebreakPoints: JSON.parse(JSON.stringify(this.tiebreakPoints)),
+            tiebreakStartServer: this.tiebreakStartServer,
+            totalSets: this.totalSets
         });
 
         // Limit history to last 50 moves
@@ -768,6 +896,13 @@ class TennisMatch {
         this.currentSet = previousState.currentSet;
         this.server = previousState.server;
         this.matchWinner = previousState.matchWinner;
+        this.tiebreak = previousState.tiebreak;
+        this.tiebreakPoints = previousState.tiebreakPoints;
+        this.tiebreakStartServer = previousState.tiebreakStartServer;
+        this.totalSets = previousState.totalSets;
+
+        // Update set columns display
+        this.updateSetColumns();
 
         if (this.matchWinner) {
             this.showMatchStatus(`🏆 ${this.playerNames[this.matchWinner].toUpperCase()} WINS! 🏆`);
@@ -783,23 +918,31 @@ class TennisMatch {
         const confirmed = confirm('Start a new match?');
         if (!confirmed) return;
 
+        // Reset to default 3 sets
+        this.totalSets = 3;
+
         this.score = {
             player1: { points: 0, games: 0, sets: 0 },
             player2: { points: 0, games: 0, sets: 0 }
         };
-        this.setHistory = [
-            { player1: 0, player2: 0 },
-            { player1: 0, player2: 0 },
-            { player1: 0, player2: 0 }
-        ];
+        this.setHistory = this.createSetHistory(3);
         this.currentSet = 0;
         this.server = 'player1';
         this.history = [];
         this.matchWinner = null;
+        this.tiebreak = false;
+        this.tiebreakPoints = { player1: 0, player2: 0 };
+        this.tiebreakStartServer = null;
 
         // Clear input fields for new names
         this.elements.player1NameInput.value = '';
         this.elements.player2NameInput.value = '';
+
+        // Reset set selection to 3
+        document.querySelectorAll('.btn-sets').forEach(btn => {
+            const sets = parseInt(btn.dataset.sets);
+            btn.classList.toggle('selected', sets === 3);
+        });
 
         this.elements.matchStatus.textContent = '';
         this.closeMenu();
