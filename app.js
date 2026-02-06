@@ -61,8 +61,13 @@ class TennisMatch {
 
         // DOM elements
         this.elements = {
-            // Modal
+            // Modals
             namesModal: document.getElementById('names-modal'),
+            matchOverModal: document.getElementById('match-over-modal'),
+            matchResultDisplay: document.getElementById('match-result-display'),
+            shareResultBtn: document.getElementById('share-result-btn'),
+            newMatchBtn: document.getElementById('new-match-btn'),
+            // Names modal
             player1NameInput: document.getElementById('player1-name-input'),
             player2NameInput: document.getElementById('player2-name-input'),
             startMatchBtn: document.getElementById('start-match-btn'),
@@ -221,7 +226,7 @@ class TennisMatch {
     }
 
     initEventListeners() {
-        // Modal
+        // Names modal
         this.elements.startMatchBtn.addEventListener('click', () => this.startMatch());
         this.elements.skipNamesBtn.addEventListener('click', () => this.startMatch());
         this.elements.player1NameInput.addEventListener('input', () => this.updateServeLabels());
@@ -232,6 +237,10 @@ class TennisMatch {
         this.elements.player2NameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.startMatch();
         });
+
+        // Match over modal
+        this.elements.shareResultBtn.addEventListener('click', () => this.shareResult());
+        this.elements.newMatchBtn.addEventListener('click', () => this.startNewMatch());
 
         // Set selection
         document.querySelectorAll('.btn-sets').forEach(btn => {
@@ -654,6 +663,8 @@ class TennisMatch {
                 if (this.score[player].sets === setsToWin) {
                     this.matchWinner = player;
                     this.showMatchStatus(`🏆 ${this.playerNames[player].toUpperCase()} WINS! 🏆`);
+                    // Show match over modal after a brief delay
+                    setTimeout(() => this.showMatchOverModal(), 2000);
                 } else {
                     this.currentSet++;
                     this.showMatchStatus(`${this.playerNames[player]} wins Set ${this.currentSet} (Tie-break)`);
@@ -695,6 +706,8 @@ class TennisMatch {
                     if (this.score[player].sets === setsToWin) {
                         this.matchWinner = player;
                         this.showMatchStatus(`🏆 ${this.playerNames[player].toUpperCase()} WINS! 🏆`);
+                        // Show match over modal after a brief delay
+                        setTimeout(() => this.showMatchOverModal(), 2000);
                     } else {
                         this.currentSet++;
                         this.showMatchStatus(`${this.playerNames[player]} wins Set ${this.currentSet}`);
@@ -946,6 +959,109 @@ class TennisMatch {
 
         this.elements.matchStatus.textContent = '';
         this.closeMenu();
+
+        // Show names modal for new match
+        this.showNamesModal();
+    }
+
+    formatMatchResult() {
+        if (!this.matchWinner) return '';
+
+        const winner = this.playerNames[this.matchWinner];
+        const loser = this.playerNames[this.matchWinner === 'player1' ? 'player2' : 'player1'];
+        const winnerSets = this.score[this.matchWinner].sets;
+        const loserSets = this.score[this.matchWinner === 'player1' ? 'player2' : 'player1'].sets;
+
+        // Build set scores
+        let setScores = '';
+        for (let i = 0; i < this.totalSets; i++) {
+            const p1Games = this.setHistory[i].player1;
+            const p2Games = this.setHistory[i].player2;
+
+            if (p1Games === 0 && p2Games === 0) break; // Unplayed set
+
+            if (this.matchWinner === 'player1') {
+                setScores += `Set ${i + 1}: ${p1Games}-${p2Games}\n`;
+            } else {
+                setScores += `Set ${i + 1}: ${p2Games}-${p1Games}\n`;
+            }
+        }
+
+        return `🎾 Pocket Umpire Match Result 🎾
+
+${winner} defeats ${loser}
+${winnerSets}-${loserSets}
+
+${setScores}
+🏆 ${winner} wins!`;
+    }
+
+    showMatchOverModal() {
+        const resultText = this.formatMatchResult();
+        this.elements.matchResultDisplay.textContent = resultText;
+        this.elements.matchOverModal.classList.remove('hidden');
+    }
+
+    async shareResult() {
+        const resultText = this.formatMatchResult();
+
+        // Try Web Share API first (works great on mobile)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: '🎾 Tennis Match Result',
+                    text: resultText
+                });
+                this.showFeedback('✓ Shared!', 'success');
+                return;
+            } catch (err) {
+                // User cancelled or error occurred
+                if (err.name !== 'AbortError') {
+                    console.log('Share failed:', err);
+                }
+            }
+        }
+
+        // Fallback: Try clipboard
+        try {
+            await navigator.clipboard.writeText(resultText);
+            this.showFeedback('✓ Copied to clipboard!', 'success');
+        } catch (err) {
+            // Last resort: Show alert with text to copy manually
+            alert('Copy this result:\n\n' + resultText);
+        }
+    }
+
+    startNewMatch() {
+        // Hide match over modal
+        this.elements.matchOverModal.classList.add('hidden');
+
+        // Reset match state
+        this.totalSets = 3;
+        this.score = {
+            player1: { points: 0, games: 0, sets: 0 },
+            player2: { points: 0, games: 0, sets: 0 }
+        };
+        this.setHistory = this.createSetHistory(3);
+        this.currentSet = 0;
+        this.server = 'player1';
+        this.history = [];
+        this.matchWinner = null;
+        this.tiebreak = false;
+        this.tiebreakPoints = { player1: 0, player2: 0 };
+        this.tiebreakStartServer = null;
+
+        // Clear input fields for new names
+        this.elements.player1NameInput.value = '';
+        this.elements.player2NameInput.value = '';
+
+        // Reset set selection to 3
+        document.querySelectorAll('.btn-sets').forEach(btn => {
+            const sets = parseInt(btn.dataset.sets);
+            btn.classList.toggle('selected', sets === 3);
+        });
+
+        this.elements.matchStatus.textContent = '';
 
         // Show names modal for new match
         this.showNamesModal();

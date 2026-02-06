@@ -36,6 +36,12 @@ A voice-controlled tennis score tracking web app for players and coaches. Keep t
   - Undo last point feature
   - Quick match reset
 
+- **Share Results**
+  - Share match results via social media or WhatsApp
+  - Uses native Web Share API on mobile devices
+  - Fallback to clipboard copy
+  - Formatted result with player names and set scores
+
 ### Themes
 
 Choose from 5 beautiful themes inspired by tennis courts around the world:
@@ -101,7 +107,6 @@ Or use it online by hosting on any web server or GitHub Pages.
 
 - [ ] Match history and statistics
 - [ ] Match timer
-- [ ] Export match results
 - [ ] Progressive Web App (PWA) support
 - [ ] Multiple language support expansion
 - [ ] Championship tie-break (at 6-6 in final set)
@@ -148,6 +153,12 @@ MIT License - See [LICENSE](LICENSE) file for details.
   - Atajos de teclado para uso en escritorio
   - Función de deshacer último punto
   - Reinicio rápido de partido
+
+- **Compartir Resultados**
+  - Comparte resultados de partidos en redes sociales o WhatsApp
+  - Usa la API Web Share nativa en dispositivos móviles
+  - Alternativa de copiar al portapapeles
+  - Resultado formateado con nombres de jugadores y puntajes de sets
 
 ### Temas
 
@@ -214,7 +225,6 @@ O úsalo en línea alojándolo en cualquier servidor web o GitHub Pages.
 
 - [ ] Historial de partidos y estadísticas
 - [ ] Temporizador de partido
-- [ ] Exportar resultados de partidos
 - [ ] Soporte para Progressive Web App (PWA)
 - [ ] Expansión de soporte multiidioma
 - [ ] Tie-break de campeonato (a 6-6 en el set final)
