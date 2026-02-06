@@ -1002,33 +1002,140 @@ ${setScores}
         this.elements.matchOverModal.classList.remove('hidden');
     }
 
-    async shareResult() {
-        const resultText = this.formatMatchResult();
+    async generateResultImage() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
-        // Try Web Share API first (works great on mobile)
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: '🎾 Tennis Match Result',
-                    text: resultText
-                });
-                this.showFeedback('✓ Shared!', 'success');
-                return;
-            } catch (err) {
-                // User cancelled or error occurred
-                if (err.name !== 'AbortError') {
-                    console.log('Share failed:', err);
-                }
+        // Set canvas size (Instagram/WhatsApp friendly - square format)
+        canvas.width = 1080;
+        canvas.height = 1080;
+
+        // Get current theme colors
+        const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+        const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-green').trim();
+        const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+        const secondaryColor = getComputedStyle(document.body).getPropertyValue('--accent-blue').trim();
+
+        // Background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add border
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 8;
+        ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+        // Title
+        ctx.fillStyle = accentColor;
+        ctx.font = 'bold 80px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🎾 Match Result', canvas.width / 2, 150);
+
+        // Winner info
+        const winner = this.playerNames[this.matchWinner];
+        const loser = this.playerNames[this.matchWinner === 'player1' ? 'player2' : 'player1'];
+        const winnerSets = this.score[this.matchWinner].sets;
+        const loserSets = this.score[this.matchWinner === 'player1' ? 'player2' : 'player1'].sets;
+
+        // Winner name
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 90px Arial';
+        ctx.fillText(winner, canvas.width / 2, 300);
+
+        // "defeats"
+        ctx.fillStyle = secondaryColor;
+        ctx.font = '50px Arial';
+        ctx.fillText('defeats', canvas.width / 2, 380);
+
+        // Loser name
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 70px Arial';
+        ctx.fillText(loser, canvas.width / 2, 470);
+
+        // Final score
+        ctx.fillStyle = accentColor;
+        ctx.font = 'bold 100px Arial';
+        ctx.fillText(`${winnerSets} - ${loserSets}`, canvas.width / 2, 600);
+
+        // Set scores
+        ctx.fillStyle = textColor;
+        ctx.font = '45px Arial';
+        let yPos = 700;
+        for (let i = 0; i < this.totalSets; i++) {
+            const p1Games = this.setHistory[i].player1;
+            const p2Games = this.setHistory[i].player2;
+
+            if (p1Games === 0 && p2Games === 0) break;
+
+            let setScore;
+            if (this.matchWinner === 'player1') {
+                setScore = `Set ${i + 1}:  ${p1Games} - ${p2Games}`;
+            } else {
+                setScore = `Set ${i + 1}:  ${p2Games} - ${p1Games}`;
             }
+
+            ctx.fillText(setScore, canvas.width / 2, yPos);
+            yPos += 60;
         }
 
-        // Fallback: Try clipboard
+        // Footer
+        ctx.fillStyle = secondaryColor;
+        ctx.font = '40px Arial';
+        ctx.fillText('Pocket Umpire', canvas.width / 2, canvas.height - 100);
+
+        // Convert to blob
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, 'image/png');
+        });
+    }
+
+    async shareResult() {
         try {
-            await navigator.clipboard.writeText(resultText);
-            this.showFeedback('✓ Copied to clipboard!', 'success');
+            // Generate image
+            const imageBlob = await this.generateResultImage();
+            const file = new File([imageBlob], 'match-result.png', { type: 'image/png' });
+
+            // Try Web Share API with image (works great on mobile)
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: '🎾 Tennis Match Result',
+                        text: `${this.playerNames[this.matchWinner]} defeats ${this.playerNames[this.matchWinner === 'player1' ? 'player2' : 'player1']}!`,
+                        files: [file]
+                    });
+                    this.showFeedback('✓ Shared!', 'success');
+                    return;
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.log('Share with image failed:', err);
+                    }
+                }
+            }
+
+            // Fallback: Download the image
+            const url = URL.createObjectURL(imageBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'match-result.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            this.showFeedback('✓ Image downloaded!', 'success');
+
         } catch (err) {
-            // Last resort: Show alert with text to copy manually
-            alert('Copy this result:\n\n' + resultText);
+            console.error('Failed to generate image:', err);
+
+            // Last resort: Copy text to clipboard
+            const resultText = this.formatMatchResult();
+            try {
+                await navigator.clipboard.writeText(resultText);
+                this.showFeedback('✓ Copied text to clipboard!', 'success');
+            } catch (clipboardErr) {
+                alert('Copy this result:\n\n' + resultText);
+            }
         }
     }
 
