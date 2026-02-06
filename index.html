@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Umpire - Tennis Score Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Player Names Modal -->
+    <div class="modal" id="names-modal">
+        <div class="modal-content">
+            <h2>🎾 New Match</h2>
+            <p>Enter player names (optional)</p>
+            <div class="modal-form">
+                <input type="text" id="player1-name-input" placeholder="Jugador 1" autocomplete="off" maxlength="20">
+                <input type="text" id="player2-name-input" placeholder="Jugador 2" autocomplete="off" maxlength="20">
+
+                <div class="serve-selection">
+                    <label>Who serves first?</label>
+                    <div class="serve-buttons">
+                        <button type="button" class="btn btn-serve" id="player1-serves" data-server="player1">
+                            <span id="player1-serve-label">Player 1</span>
+                        </button>
+                        <button type="button" class="btn btn-serve" id="player2-serves" data-server="player2">
+                            <span id="player2-serve-label">Player 2</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="btn btn-primary" id="start-match-btn">Start Match</button>
+                    <button class="btn btn-secondary" id="skip-names-btn">Skip</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header with Menu -->
+        <header>
+            <div class="header-content">
+                <h1>🎾 Pocket Umpire</h1>
+                <button id="menu-btn" class="menu-btn" aria-label="Menu">☰</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- ESPN-Style Set History -->
+            <div class="set-history" id="set-history">
+                <div class="set-history-row">
+                    <div class="player-info">
+                        <span class="player-name" id="player1-name-display">Player 1</span>
+                        <span class="serve-indicator" id="player1-serve">●</span>
+                    </div>
+                    <div class="sets-container">
+                        <div class="set-score" id="p1-set1">-</div>
+                        <div class="set-score" id="p1-set2">-</div>
+                        <div class="set-score" id="p1-set3">-</div>
+                    </div>
+                </div>
+                <div class="set-history-row">
+                    <div class="player-info">
+                        <span class="player-name" id="player2-name-display">Player 2</span>
+                        <span class="serve-indicator" id="player2-serve">●</span>
+                    </div>
+                    <div class="sets-container">
+                        <div class="set-score" id="p2-set1">-</div>
+                        <div class="set-score" id="p2-set2">-</div>
+                        <div class="set-score" id="p2-set3">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Score Display -->
+            <div class="current-score">
+                <div class="score-row">
+                    <div class="player-side">
+                        <div class="current-points" id="player1-points">0</div>
+                    </div>
+                    <div class="score-divider"></div>
+                    <div class="player-side">
+                        <div class="current-points" id="player2-points">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Match Status -->
+            <div class="match-status" id="match-status"></div>
+
+            <!-- Voice Control (always visible) -->
+            <div class="voice-control-main">
+                <button id="voice-btn" class="btn btn-voice" aria-label="Toggle voice recognition">
+                    <span class="mic-icon">🎤</span>
+                    <span class="btn-text">Start Listening</span>
+                </button>
+                <div class="voice-feedback" id="voice-feedback"></div>
+            </div>
+        </main>
+
+        <!-- Slide-out Menu -->
+        <div class="menu-overlay" id="menu-overlay"></div>
+        <div class="menu-panel" id="menu-panel">
+            <div class="menu-header">
+                <h2>Controls</h2>
+                <button class="close-btn" id="close-menu">✕</button>
+            </div>
+
+            <div class="menu-content">
+                <!-- Theme Selection -->
+                <section class="menu-section">
+                    <h3>🎨 Theme</h3>
+                    <div class="theme-grid">
+                        <button class="btn theme-btn active" data-theme="default">
+                            <span class="theme-name">Default</span>
+                            <span class="theme-desc">High Contrast</span>
+                        </button>
+                        <button class="btn theme-btn" data-theme="australian-open">
+                            <span class="theme-name">🇦🇺 Australian Open</span>
+                            <span class="theme-desc">Blue Court</span>
+                        </button>
+                        <button class="btn theme-btn" data-theme="french-open">
+                            <span class="theme-name">🇫🇷 French Open</span>
+                            <span class="theme-desc">Clay Court</span>
+                        </button>
+                        <button class="btn theme-btn" data-theme="wimbledon">
+                            <span class="theme-name">🇬🇧 Wimbledon</span>
+                            <span class="theme-desc">Grass Court</span>
+                        </button>
+                        <button class="btn theme-btn" data-theme="us-open">
+                            <span class="theme-name">🇺🇸 US Open</span>
+                            <span class="theme-desc">Blue Court</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Edit Names -->
+                <section class="menu-section">
+                    <h3>Player Names</h3>
+                    <div class="edit-names-form">
+                        <input type="text" id="edit-player1-name" placeholder="Jugador 1" autocomplete="off" maxlength="20">
+                        <input type="text" id="edit-player2-name" placeholder="Jugador 2" autocomplete="off" maxlength="20">
+                        <button class="btn btn-primary" id="save-names-btn">Save Names</button>
+                    </div>
+                </section>
+
+                <!-- Manual Controls -->
+                <section class="menu-section">
+                    <h3>Manual Controls</h3>
+                    <div class="control-row">
+                        <button class="btn btn-primary" id="player1-point">Point Player 1</button>
+                        <button class="btn btn-primary" id="player2-point">Point Player 2</button>
+                    </div>
+                </section>
+
+                <!-- Match Controls -->
+                <section class="menu-section">
+                    <h3>Match Controls</h3>
+                    <div class="control-row">
+                        <button class="btn btn-secondary" id="undo-btn">↶ Undo</button>
+                        <button class="btn btn-warning" id="reset-btn">Reset Match</button>
+                    </div>
+                </section>
+
+                <!-- Voice Commands Help -->
+                <section class="menu-section">
+                    <details class="help-section" open>
+                        <summary>Voice Commands</summary>
+                        <div class="commands-list">
+                            <div class="command-group">
+                                <h4>Score Points</h4>
+                                <ul>
+                                    <li><strong>"punto uno"</strong> / <strong>"point one"</strong> - Point to Player 1</li>
+                                    <li><strong>"punto dos"</strong> / <strong>"point two"</strong> - Point to Player 2</li>
+                                    <li><strong>"juego"</strong> / <strong>"game"</strong> - Award game to player one point from winning</li>
+                                </ul>
+                            </div>
+                            <div class="command-group">
+                                <h4>Set Exact Score</h4>
+                                <ul>
+                                    <li><strong>"quince cero"</strong> - Set score to 15-0</li>
+                                    <li><strong>"treinta quince"</strong> - Set score to 30-15</li>
+                                    <li><strong>"cuarenta treinta"</strong> - Set score to 40-30</li>
+                                    <li><strong>"deuce"</strong> - Set score to deuce</li>
+                                </ul>
+                            </div>
+                            <div class="command-group">
+                                <h4>Match Control</h4>
+                                <ul>
+                                    <li><strong>"deshacer"</strong> / <strong>"undo"</strong> - Undo last point</li>
+                                    <li><strong>"reiniciar"</strong> / <strong>"reset"</strong> - Reset match</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </details>
+                </section>
+            </div>
+        </div>
+
+        <footer>
+            <p>Tap score to add points • Open menu for controls</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
